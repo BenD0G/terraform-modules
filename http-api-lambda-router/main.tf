@@ -42,7 +42,7 @@ resource "aws_route53_record" "acm_validation" {
 # Wait for all validations
 resource "aws_acm_certificate_validation" "api" {
   certificate_arn         = aws_acm_certificate.api.arn
-  validation_record_fqdns = [for r in aws_route53_record.acm_validation : r.value.fqdn]
+  validation_record_fqdns = [for r in aws_route53_record.acm_validation : r.fqdn]
 }
 
 # ────────────────────────────────────────────────────────────────────────────────
