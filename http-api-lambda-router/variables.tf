@@ -1,10 +1,10 @@
 variable "subdomain" {
-  description = "Existing subdomain to prefix with 'api.'. Example: 'health.bend0g.com'"
+  description = "Existing subdomain to prefix with 'api.'. Example: 'foo.bar.com'"
   type        = string
 }
 
 variable "root_zone_name" {
-  description = "Public Route53 hosted zone name (apex). Accepts 'bend0g.com' or 'bend0g.com.'"
+  description = "Public Route53 hosted zone name (apex). Accepts 'bar.com' or 'bar.com.'"
   type        = string
 }
 
