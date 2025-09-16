@@ -1,6 +1,7 @@
 locals {
   managed_policy_arns = [
     "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole", # Basic CloudWatch logging
+    "arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess"
   ]
   # Add pushover to provided inline statements
   inline_policy_statements = concat(var.inline_policy_statements, [
@@ -58,5 +59,3 @@ resource "aws_iam_role_policy" "inline" {
   role   = aws_iam_role.this.id
   policy = data.aws_iam_policy_document.inline.json
 }
-
-output "role_arn" { value = aws_iam_role.this.arn }
