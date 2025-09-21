@@ -10,3 +10,6 @@ Given an existing subdomain (`foo.bar.com`), make `api.foo.bar.com`, and wire up
 
 ## lambda-execution-role
 Centralise a lot of the boiler plate needed for running a lambda.
+
+## private-s3-bucket
+Just the boilerplate for a simple, private and encrypted S3 bucket.
