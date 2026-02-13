@@ -41,16 +41,10 @@ variable "cors_configuration" {
   default = null
 }
 
-variable "authorizer" {
-  description = "Optional Lambda authorizer configuration. When set, routes with requires_auth = true will use this authorizer."
-  type = object({
-    name                    = string
-    function_name           = string
-    payload_format_version  = optional(string, "2.0")
-    identity_sources        = optional(list(string), ["$request.header.Authorization"])
-    enable_simple_responses = optional(bool, true)
-  })
-  default = null
+variable "authorizer_function_name" {
+  description = "Lambda function name for the JWT authorizer. Used automatically when any route has requires_auth = true."
+  type        = string
+  default     = "auth-authorizer"
 }
 
 variable "default_route_settings" {

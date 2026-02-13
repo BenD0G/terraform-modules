@@ -5,6 +5,9 @@ locals {
 
   # Re-key for convenience
   routes_by_name = { for r in var.routes : r.name => r }
+
+  # Whether any route needs the authorizer
+  needs_authorizer = anytrue([for r in var.routes : r.requires_auth])
 }
 
 # Hosted zone lookup (public)
@@ -160,23 +163,23 @@ resource "aws_lambda_permission" "invoke" {
 # Optional Lambda authorizer
 # ────────────────────────────────────────────────────────────────────────────────
 data "aws_lambda_function" "authorizer" {
-  count         = var.authorizer != null ? 1 : 0
-  function_name = var.authorizer.function_name
+  count         = local.needs_authorizer ? 1 : 0
+  function_name = var.authorizer_function_name
 }
 
 resource "aws_apigatewayv2_authorizer" "this" {
-  count                             = var.authorizer != null ? 1 : 0
+  count                             = local.needs_authorizer ? 1 : 0
   api_id                            = aws_apigatewayv2_api.this.id
   authorizer_type                   = "REQUEST"
   authorizer_uri                    = data.aws_lambda_function.authorizer[0].invoke_arn
-  authorizer_payload_format_version = var.authorizer.payload_format_version
-  identity_sources                  = var.authorizer.identity_sources
-  name                              = var.authorizer.name
-  enable_simple_responses           = var.authorizer.enable_simple_responses
+  authorizer_payload_format_version = "2.0"
+  identity_sources                  = ["$request.header.Authorization"]
+  name                              = "jwt-authorizer"
+  enable_simple_responses           = true
 }
 
 resource "aws_lambda_permission" "authorizer_invoke" {
-  count         = var.authorizer != null ? 1 : 0
+  count         = local.needs_authorizer ? 1 : 0
   statement_id  = "AllowInvokeFromApiGw-authorizer"
   action        = "lambda:InvokeFunction"
   function_name = data.aws_lambda_function.authorizer[0].function_name
