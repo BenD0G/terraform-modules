@@ -12,19 +12,19 @@ variable "routes" {
   description = <<EOT
 Non-empty list of route specs. Each object:
 {
-  name               = "entries"          # unique short id for Terraform resource keys
-  function_name      = "entries-prod"     # EXISTING Lambda function name to invoke
-  route_key          = "POST /entries"    # HTTP API v2 route key (e.g., "GET /health")
-  timeout_ms         = 29000             # integration timeout in ms (default 29000)
-  authorization_type = null              # "CUSTOM" or null
+  name          = "entries"          # unique short id for Terraform resource keys
+  function_name = "entries-prod"     # EXISTING Lambda function name to invoke
+  route_key     = "POST /entries"    # HTTP API v2 route key (e.g., "GET /health")
+  timeout_ms    = 29000             # integration timeout in ms (default 29000)
+  requires_auth = false             # whether this route requires authorization
 }
 EOT
   type = list(object({
-    name               = string
-    function_name      = string
-    route_key          = string
-    timeout_ms         = optional(number, 29000)
-    authorization_type = optional(string)
+    name          = string
+    function_name = string
+    route_key     = string
+    timeout_ms    = optional(number, 29000)
+    requires_auth = optional(bool, false)
   }))
 }
 
@@ -42,7 +42,7 @@ variable "cors_configuration" {
 }
 
 variable "authorizer" {
-  description = "Optional Lambda authorizer configuration. When set, routes with authorization_type = \"CUSTOM\" will use this authorizer."
+  description = "Optional Lambda authorizer configuration. When set, routes with requires_auth = true will use this authorizer."
   type = object({
     name                    = string
     function_name           = string

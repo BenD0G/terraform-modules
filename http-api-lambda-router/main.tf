@@ -143,8 +143,8 @@ resource "aws_apigatewayv2_route" "route" {
 
   route_key          = each.value.route_key
   target             = "integrations/${aws_apigatewayv2_integration.lambda[each.key].id}"
-  authorization_type = each.value.authorization_type
-  authorizer_id      = each.value.authorization_type == "CUSTOM" ? aws_apigatewayv2_authorizer.this[0].id : null
+  authorization_type = each.value.requires_auth ? "CUSTOM" : null
+  authorizer_id      = each.value.requires_auth ? aws_apigatewayv2_authorizer.this[0].id : null
 }
 
 resource "aws_lambda_permission" "invoke" {
