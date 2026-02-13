@@ -68,6 +68,14 @@ resource "aws_apigatewayv2_stage" "default" {
   api_id      = aws_apigatewayv2_api.this.id
   name        = "$default"
   auto_deploy = true
+
+  dynamic "default_route_settings" {
+    for_each = var.default_route_settings != null ? [var.default_route_settings] : []
+    content {
+      throttling_burst_limit = default_route_settings.value.throttling_burst_limit
+      throttling_rate_limit  = default_route_settings.value.throttling_rate_limit
+    }
+  }
 }
 
 # ────────────────────────────────────────────────────────────────────────────────
@@ -126,15 +134,17 @@ resource "aws_apigatewayv2_integration" "lambda" {
   integration_type       = "AWS_PROXY"
   integration_uri        = data.aws_lambda_function.fn[each.key].invoke_arn
   payload_format_version = "2.0"
-  timeout_milliseconds   = 29000
+  timeout_milliseconds   = each.value.timeout_ms
 }
 
 resource "aws_apigatewayv2_route" "route" {
   for_each = local.routes_by_name
   api_id   = aws_apigatewayv2_api.this.id
 
-  route_key = each.value.route_key # e.g., "GET /health"
-  target    = "integrations/${aws_apigatewayv2_integration.lambda[each.key].id}"
+  route_key          = each.value.route_key
+  target             = "integrations/${aws_apigatewayv2_integration.lambda[each.key].id}"
+  authorization_type = each.value.authorization_type
+  authorizer_id      = each.value.authorization_type == "CUSTOM" ? aws_apigatewayv2_authorizer.this[0].id : null
 }
 
 resource "aws_lambda_permission" "invoke" {
@@ -142,6 +152,34 @@ resource "aws_lambda_permission" "invoke" {
   statement_id  = "AllowInvokeFromApiGw-${each.key}"
   action        = "lambda:InvokeFunction"
   function_name = data.aws_lambda_function.fn[each.key].function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.this.execution_arn}/*/*"
+}
+
+# ────────────────────────────────────────────────────────────────────────────────
+# Optional Lambda authorizer
+# ────────────────────────────────────────────────────────────────────────────────
+data "aws_lambda_function" "authorizer" {
+  count         = var.authorizer != null ? 1 : 0
+  function_name = var.authorizer.function_name
+}
+
+resource "aws_apigatewayv2_authorizer" "this" {
+  count                             = var.authorizer != null ? 1 : 0
+  api_id                            = aws_apigatewayv2_api.this.id
+  authorizer_type                   = "REQUEST"
+  authorizer_uri                    = data.aws_lambda_function.authorizer[0].invoke_arn
+  authorizer_payload_format_version = var.authorizer.payload_format_version
+  identity_sources                  = var.authorizer.identity_sources
+  name                              = var.authorizer.name
+  enable_simple_responses           = var.authorizer.enable_simple_responses
+}
+
+resource "aws_lambda_permission" "authorizer_invoke" {
+  count         = var.authorizer != null ? 1 : 0
+  statement_id  = "AllowInvokeFromApiGw-authorizer"
+  action        = "lambda:InvokeFunction"
+  function_name = data.aws_lambda_function.authorizer[0].function_name
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_apigatewayv2_api.this.execution_arn}/*/*"
 }
